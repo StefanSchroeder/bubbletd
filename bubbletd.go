@@ -1,3 +1,7 @@
+// bubbletd is a package implementing a 
+// Getting-Things-Done workflow.
+// See README.md for details.
+// Written by Stefan Schroeder
 package bubbletd
 
 import (
