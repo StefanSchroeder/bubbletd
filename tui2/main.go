@@ -14,7 +14,7 @@ type model struct {
 	Tabs       []string
 	TabContent []string
 	activeTab  int
-	TextInput textinput.Model
+	TextInputs []textinput.Model
 	NewTask    string
 }
 
@@ -23,11 +23,24 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.TextInputs))
+
+	// Only text inputs with Focus() set will respond, so it's safe to simply
+	// update all of them here without any further logic.
+	for i := range m.TextInputs {
+		m.TextInputs[i], cmds[i] = m.TextInputs[i].Update(msg)
+	}
+
+	return tea.Batch(cmds...)
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
+		case "ctrl+c", "esc":
 			return m, tea.Quit
 		case "tab":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
@@ -37,9 +50,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	}
-	m.TextInput, _ = m.TextInput.Update(msg)
 
-	return m, nil
+	// Handle character input and blinking
+	cmd := m.updateInputs(msg)
+
+	// m.TextInput, _ = m.TextInput.Update(msg)
+	return m, cmd
 }
 
 func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
@@ -92,7 +108,7 @@ func (m model) View() string {
 	doc.WriteString("\n")
 	
 	if m.activeTab == 0 {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInput.View()))
+		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
 	} else {
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
@@ -107,7 +123,28 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInput: ti}
+	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 3)}
+
+	var t textinput.Model
+	for i := range m.TextInputs {
+		t = textinput.New()
+		t.CharLimit = 32
+
+		switch i {
+		case 0:
+			t.Placeholder = "Nickname"
+			t.Focus()
+		case 1:
+			t.Placeholder = "Email"
+			t.CharLimit = 64
+		case 2:
+			t.Placeholder = "Password"
+			t.EchoCharacter = '•'
+		}
+
+		m.TextInputs[i] = t
+	}
+
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
