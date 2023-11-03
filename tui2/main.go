@@ -10,7 +10,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var (
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle         = focusedStyle.Copy()
+	noStyle             = lipgloss.NewStyle()
+	helpStyle           = blurredStyle.Copy()
+	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+
+	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+)
+
 type model struct {
+	focusIndex int
 	Tabs       []string
 	TabContent []string
 	activeTab  int
@@ -48,11 +61,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "shift+tab":
 			m.activeTab = max(m.activeTab-1, 0)
 			return m, nil
+		case "up":
+			m.focusIndex--
+		case "down":
+			m.focusIndex++
 		}
+			
 	}
+			/*if m.focusIndex > len(m.TextInputs) {
+				m.focusIndex = 0
+			} else if m.focusIndex < 0 {
+				m.focusIndex = len(m.TextInputs)
+			}*/
 
 	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
+
+			cmds := make([]tea.Cmd, len(m.TextInputs))
+			for i := 0; i <= len(m.TextInputs)-1; i++ {
+				if i == m.focusIndex {
+					// Set focused state
+					cmds[i] = m.TextInputs[i].Focus()
+					m.TextInputs[i].PromptStyle = focusedStyle
+					m.TextInputs[i].TextStyle = focusedStyle
+					continue
+				}
+				m.TextInputs[i].Blur()
+				m.TextInputs[i].PromptStyle = noStyle
+				m.TextInputs[i].TextStyle = noStyle
+			}
 
 	// m.TextInput, _ = m.TextInput.Update(msg)
 	return m, cmd
