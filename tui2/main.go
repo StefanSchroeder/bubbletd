@@ -108,7 +108,13 @@ func (m model) View() string {
 	doc.WriteString("\n")
 	
 	if m.activeTab == 0 {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
+		doc.WriteString(m.TextInputs[0].View())
+		doc.WriteString("\n")
+		doc.WriteString(m.TextInputs[1].View())
+		doc.WriteString("\n")
+		doc.WriteString(m.TextInputs[2].View())
+		doc.WriteString("\n")
+		//doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
 	} else {
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
