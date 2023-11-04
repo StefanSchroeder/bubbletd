@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -29,6 +31,8 @@ type model struct {
 	activeTab  int
 	TextInputs []textinput.Model
 	NewTask    string
+	table table.Model
+	textarea textarea.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -68,11 +72,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 			
 	}
-			/*if m.focusIndex > len(m.TextInputs) {
+			if m.focusIndex > len(m.TextInputs) {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
 				m.focusIndex = len(m.TextInputs)
-			}*/
+			}
 
 	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
@@ -147,18 +151,67 @@ func (m model) View() string {
 	if m.activeTab == 0 {
 		doc.WriteString(m.TextInputs[0].View())
 		doc.WriteString("\n")
-		doc.WriteString(m.TextInputs[1].View())
+		doc.WriteString("\n")
+		/*doc.WriteString(m.TextInputs[1].View())
 		doc.WriteString("\n")
 		doc.WriteString(m.TextInputs[2].View())
+		doc.WriteString("\n")*/
+		doc.WriteString(m.table.View())
 		doc.WriteString("\n")
+		doc.WriteString("Description\n")
+		doc.WriteString(m.textarea.View())
 		//doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
+	} else if m.activeTab == 1 {
+		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+	} else if m.activeTab == 2 {
+		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	} else {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
 	return docStyle.Render(doc.String())
 }
 
 func main() {
+
+	tia := textarea.New()
+	tia.Placeholder = "Once upon a time..."
+
+	columns := []table.Column{
+		{Title: "Rank", Width: 4},
+		{Title: "City", Width: 40},
+	}
+
+	rows := []table.Row{
+		{"1", "Tokyo"},
+		{"100", "Montreal"},
+	}
+
+	tb := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(true),
+		table.WithHeight(20),
+	)
+
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	tb.SetStyles(s)
+
+
+
+
+
+
+
+
 	tabs := []string{"Inbox", "Trash", "Reference", "Postpone", "Foundation"}
 	tabContent := []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
 	ti := textinput.New()
@@ -166,7 +219,7 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 3)}
+	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 3), table: tb, textarea: tia}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
