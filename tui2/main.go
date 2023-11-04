@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -31,8 +31,8 @@ type model struct {
 	activeTab  int
 	TextInputs []textinput.Model
 	NewTask    string
-	table table.Model
-	textarea textarea.Model
+	table      table.Model
+	textarea   textarea.Model
 }
 
 func (m model) Init() tea.Cmd {
@@ -70,30 +70,30 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down":
 			m.focusIndex++
 		}
-			
+
 	}
-			if m.focusIndex > len(m.TextInputs) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.TextInputs)
-			}
+	if m.focusIndex > len(m.TextInputs) {
+		m.focusIndex = 0
+	} else if m.focusIndex < 0 {
+		m.focusIndex = len(m.TextInputs)
+	}
 
 	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
 
-			cmds := make([]tea.Cmd, len(m.TextInputs))
-			for i := 0; i <= len(m.TextInputs)-1; i++ {
-				if i == m.focusIndex {
-					// Set focused state
-					cmds[i] = m.TextInputs[i].Focus()
-					m.TextInputs[i].PromptStyle = focusedStyle
-					m.TextInputs[i].TextStyle = focusedStyle
-					continue
-				}
-				m.TextInputs[i].Blur()
-				m.TextInputs[i].PromptStyle = noStyle
-				m.TextInputs[i].TextStyle = noStyle
-			}
+	cmds := make([]tea.Cmd, len(m.TextInputs))
+	for i := 0; i <= len(m.TextInputs)-1; i++ {
+		if i == m.focusIndex {
+			// Set focused state
+			cmds[i] = m.TextInputs[i].Focus()
+			m.TextInputs[i].PromptStyle = focusedStyle
+			m.TextInputs[i].TextStyle = focusedStyle
+			continue
+		}
+		m.TextInputs[i].Blur()
+		m.TextInputs[i].PromptStyle = noStyle
+		m.TextInputs[i].TextStyle = noStyle
+	}
 
 	// m.TextInput, _ = m.TextInput.Update(msg)
 	return m, cmd
@@ -147,7 +147,7 @@ func (m model) View() string {
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
 	doc.WriteString(row)
 	doc.WriteString("\n")
-	
+
 	if m.activeTab == 0 {
 		doc.WriteString(m.TextInputs[0].View())
 		doc.WriteString("\n")
@@ -162,11 +162,11 @@ func (m model) View() string {
 		doc.WriteString(m.textarea.View())
 		//doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
 	} else if m.activeTab == 1 {
-		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	} else if m.activeTab == 2 {
-		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	} else {
-		doc.WriteString(windowStyle.Width(2*(lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
 	return docStyle.Render(doc.String())
 }
@@ -190,7 +190,7 @@ func main() {
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(true),
-		table.WithHeight(20),
+		table.WithHeight(10),
 	)
 
 	s := table.DefaultStyles()
@@ -205,15 +205,8 @@ func main() {
 		Bold(false)
 	tb.SetStyles(s)
 
-
-
-
-
-
-
-
-	tabs := []string{"Inbox", "Trash", "Reference", "Postpone", "Foundation"}
-	tabContent := []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
+	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
+	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
 	ti := textinput.New()
 	ti.Placeholder = "Pikachu"
 	ti.Focus()
