@@ -49,6 +49,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 		m.TextInputs[i], cmds[i] = m.TextInputs[i].Update(msg)
 	}
 
+	m.table, _ = m.table.Update(msg)
 	return tea.Batch(cmds...)
 }
 
@@ -65,18 +66,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "shift+tab":
 			m.activeTab = max(m.activeTab-1, 0)
 			return m, nil
-		case "up":
+		case "enter":
+			//entered_text := m.TextInputs[0].View()
+			//fmt.Println(entered_text)
+			m.table.Focus()
+			
+		/*case "up":
 			m.focusIndex--
 		case "down":
-			m.focusIndex++
+			m.focusIndex++*/
 		}
 
 	}
-	if m.focusIndex > len(m.TextInputs) {
+	/*if m.focusIndex > len(m.TextInputs) {
 		m.focusIndex = 0
 	} else if m.focusIndex < 0 {
 		m.focusIndex = len(m.TextInputs)
-	}
+	}*/
 
 	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
@@ -212,12 +218,12 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 3), table: tb, textarea: tia}
+	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
 		t = textinput.New()
-		t.CharLimit = 32
+		t.CharLimit = 22
 
 		switch i {
 		case 0:
