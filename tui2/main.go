@@ -13,6 +13,14 @@ import (
 )
 
 var (
+	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
+	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
+	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
+	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+
 	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cursorStyle         = focusedStyle.Copy()
@@ -68,13 +76,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "enter":
 			//entered_text := m.TextInputs[0].View()
-			//fmt.Println(entered_text)
+
+			/*rows := []table.Row{
+				{"xxx", entered_text},
+			}*/
+			//m.table = m.table.WithRows(generateRowsFromData()).WithColumns(generateColumns())
+
+columns := []table.Column{
+	{Title: "Rank", Width: 4},
+	{Title: "City", Width: 40},
+}
+rows := []table.Row{
+	{"1", "Tokyo"},
+	{"100", "Montreal"},
+	{"101", "1ontreal"},
+}
+
+m.table = table.New(
+	table.WithColumns(columns),
+	table.WithRows(rows),
+	table.WithFocused(true),
+	table.WithHeight(10),
+)
+
 			m.table.Focus()
-			
-		/*case "up":
-			m.focusIndex--
-		case "down":
-			m.focusIndex++*/
+
+			/*case "up":
+				m.focusIndex--
+			case "down":
+				m.focusIndex++*/
 		}
 
 	}
@@ -112,16 +142,6 @@ func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
 	border.BottomRight = right
 	return border
 }
-
-var (
-	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
-	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
-	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2)
-	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
-	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
-)
 
 func (m model) View() string {
 	doc := strings.Builder{}
@@ -187,17 +207,17 @@ func main() {
 		{Title: "City", Width: 40},
 	}
 
-	rows := []table.Row{
-		{"1", "Tokyo"},
-		{"100", "Montreal"},
-	}
+rows := []table.Row{
+	{"1", "Tokyo"},
+	{"100", "Montreal"},
+}
 
-	tb := table.New(
-		table.WithColumns(columns),
-		table.WithRows(rows),
-		table.WithFocused(true),
-		table.WithHeight(10),
-	)
+tb := table.New(
+	table.WithColumns(columns),
+	table.WithRows(rows),
+	table.WithFocused(true),
+	table.WithHeight(10),
+)
 
 	s := table.DefaultStyles()
 	s.Header = s.Header.
