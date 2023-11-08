@@ -28,8 +28,6 @@ var (
 	helpStyle           = blurredStyle.Copy()
 	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 
-	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
 )
 
 type model struct {
@@ -41,6 +39,7 @@ type model struct {
 	NewTask    string
 	table      table.Model
 	textarea   textarea.Model
+	data       []string
 }
 
 func (m model) Init() tea.Cmd {
@@ -61,6 +60,45 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func build_table(a []string) table.Model {
+	columns := []table.Column{
+		{Title: "ID", Width: 4},
+		{Title: "Task", Width: 40},
+	}
+
+	rows := []table.Row{}
+
+for i := len(a)-1; i >= 0; i-- {
+	j := a[i]
+	rows = append( rows, []string{fmt.Sprint(i), j } )
+}
+
+/*	for i, j := range a {
+		rows = append( rows, []string{fmt.Sprint(i), j } )
+	}*/
+
+	tb := table.New(
+		table.WithColumns(columns),
+		table.WithRows(rows),
+		table.WithFocused(false),
+		table.WithHeight(5),
+	)
+
+	/*s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	tb.SetStyles(s)*/
+	return tb
+}
+
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -68,38 +106,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
-		case "tab":
+		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			return m, nil
-		case "shift+tab":
+		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
 			return m, nil
 		case "enter":
-			//entered_text := m.TextInputs[0].View()
+			entered_text := strings.TrimSpace(m.TextInputs[0].View())
+			entered_text = strings.SplitN(entered_text, " ", 2)[1]
 
-			/*rows := []table.Row{
-				{"xxx", entered_text},
-			}*/
-			//m.table = m.table.WithRows(generateRowsFromData()).WithColumns(generateColumns())
+			m.data = append( m.data, entered_text)
+			m.table = build_table( m.data )
+			m.TextInputs[0].SetValue("")
 
-columns := []table.Column{
-	{Title: "Rank", Width: 4},
-	{Title: "City", Width: 40},
-}
-rows := []table.Row{
-	{"1", "Tokyo"},
-	{"100", "Montreal"},
-	{"101", "1ontreal"},
-}
-
-m.table = table.New(
-	table.WithColumns(columns),
-	table.WithRows(rows),
-	table.WithFocused(true),
-	table.WithHeight(10),
-)
-
-			m.table.Focus()
+			//m.table.Focus()
 
 			/*case "up":
 				m.focusIndex--
@@ -175,17 +196,15 @@ func (m model) View() string {
 	doc.WriteString("\n")
 
 	if m.activeTab == 0 {
-		doc.WriteString(m.TextInputs[0].View())
-		doc.WriteString("\n")
-		doc.WriteString("\n")
-		/*doc.WriteString(m.TextInputs[1].View())
-		doc.WriteString("\n")
-		doc.WriteString(m.TextInputs[2].View())
-		doc.WriteString("\n")*/
-		doc.WriteString(m.table.View())
-		doc.WriteString("\n")
-		doc.WriteString("Description\n")
-		doc.WriteString(m.textarea.View())
+		x := fmt.Sprint(m.TextInputs[0].View())
+		x += "\n"
+		x += m.table.View()
+		x += "\n"
+		x += "Description\n"
+		x += m.textarea.View()
+
+		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
+
 		//doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
 	} else if m.activeTab == 1 {
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
@@ -202,34 +221,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Once upon a time..."
 
-	columns := []table.Column{
-		{Title: "Rank", Width: 4},
-		{Title: "City", Width: 40},
-	}
-
-rows := []table.Row{
-	{"1", "Tokyo"},
-	{"100", "Montreal"},
-}
-
-tb := table.New(
-	table.WithColumns(columns),
-	table.WithRows(rows),
-	table.WithFocused(true),
-	table.WithHeight(10),
-)
-
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
-	tb.SetStyles(s)
+			tb  := build_table( []string{} )
 
 	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
@@ -238,7 +230,7 @@ tb := table.New(
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia}
+	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia, data: []string{} }
 
 	var t textinput.Model
 	for i := range m.TextInputs {
@@ -247,7 +239,7 @@ tb := table.New(
 
 		switch i {
 		case 0:
-			t.Placeholder = "Nickname"
+			t.Placeholder = "New Task"
 			t.Focus()
 		case 1:
 			t.Placeholder = "Email"
