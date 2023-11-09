@@ -15,11 +15,11 @@ import (
 var (
 	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
-	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2).Align(lipgloss.Left)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 2).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 
 	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
@@ -27,7 +27,6 @@ var (
 	noStyle             = lipgloss.NewStyle()
 	helpStyle           = blurredStyle.Copy()
 	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-
 )
 
 type model struct {
@@ -50,13 +49,14 @@ func (m model) Init() tea.Cmd {
 func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.TextInputs))
 
-	// Only text inputs with Focus() set will respond, so it's safe to simply
+	// Only text inputs with Focus set will respond, so it's safe to simply
 	// update all of them here without any further logic.
 	for i := range m.TextInputs {
 		m.TextInputs[i], cmds[i] = m.TextInputs[i].Update(msg)
 	}
 
 	m.table, _ = m.table.Update(msg)
+	m.textarea, _ = m.textarea.Update(msg)
 	return tea.Batch(cmds...)
 }
 
@@ -68,12 +68,12 @@ func build_table(a []string) table.Model {
 
 	rows := []table.Row{}
 
-for i := len(a)-1; i >= 0; i-- {
-	j := a[i]
-	rows = append( rows, []string{fmt.Sprint(i), j } )
-}
+	for i := len(a) - 1; i >= 0; i-- {
+		j := a[i]
+		rows = append(rows, []string{fmt.Sprint(i), j})
+	}
 
-/*	for i, j := range a {
+	/*	for i, j := range a {
 		rows = append( rows, []string{fmt.Sprint(i), j } )
 	}*/
 
@@ -98,7 +98,6 @@ for i := len(a)-1; i >= 0; i-- {
 	return tb
 }
 
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -109,6 +108,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			return m, nil
+		case "tab":
+
+			m.focusIndex++
+
+			if m.focusIndex == 1 {
+				m.TextInputs[0].Blur()
+				m.table.Focus()
+				m.textarea.Blur()
+			} else if m.focusIndex == 2 {
+				m.TextInputs[0].Blur()
+				m.table.Blur()
+				m.textarea.Focus()
+			} else if m.focusIndex == 3 {
+				m.focusIndex = 0
+				m.TextInputs[0].Focus()
+				m.table.Blur()
+				m.textarea.Blur()
+			}
+
+			return m, nil
 		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
 			return m, nil
@@ -116,16 +135,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			entered_text := strings.TrimSpace(m.TextInputs[0].View())
 			entered_text = strings.SplitN(entered_text, " ", 2)[1]
 
-			m.data = append( m.data, entered_text)
-			m.table = build_table( m.data )
+			m.data = append(m.data, entered_text)
+			m.table = build_table(m.data)
 			m.TextInputs[0].SetValue("")
-
-			//m.table.Focus()
-
-			/*case "up":
-				m.focusIndex--
-			case "down":
-				m.focusIndex++*/
 		}
 
 	}
@@ -198,9 +210,12 @@ func (m model) View() string {
 	if m.activeTab == 0 {
 		x := fmt.Sprint(m.TextInputs[0].View())
 		x += "\n"
+		x += "\n"
 		x += m.table.View()
 		x += "\n"
+		x += "\n"
 		x += "Description\n"
+		x += "\n"
 		x += m.textarea.View()
 
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
@@ -221,7 +236,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Once upon a time..."
 
-			tb  := build_table( []string{} )
+	tb := build_table([]string{})
 
 	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
@@ -230,7 +245,7 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia, data: []string{} }
+	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia, data: []string{}}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
