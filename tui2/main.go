@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -39,6 +40,8 @@ type model struct {
 	table      table.Model
 	textarea   textarea.Model
 	data       []string
+	activeID   int
+	textareas  []string
 }
 
 func (m model) Init() tea.Cmd {
@@ -57,6 +60,22 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 
 	m.table, _ = m.table.Update(msg)
 	m.textarea, _ = m.textarea.Update(msg)
+
+	if m.focusIndex == 1 {
+		current_table_row := m.table.SelectedRow()
+		if len(current_table_row) > 0 {
+			current_table_index, _ := strconv.Atoi(current_table_row[0])
+			fmt.Printf("<%v>", current_table_index)
+		}
+		// Changing selected entry. Retrieve entry for textarea
+		current_table_row2 := m.table.SelectedRow()
+		if len(current_table_row2) > 0 {
+			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
+			m.textarea.SetValue( m.textareas[current_table_index2] )
+		}
+	}
+
+
 	return tea.Batch(cmds...)
 }
 
@@ -98,6 +117,17 @@ func build_table(a []string) table.Model {
 	return tb
 }
 
+
+/*
+func (e example) View() string {
+	return e.viewport.View() + e.helpView()
+}
+
+func (e example) helpView() string {
+	return helpStyle("\n  ↑/↓: Navigate • q: Quit\n")
+}
+*/
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -105,6 +135,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch keypress := msg.String(); keypress {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
+		case "f1":
+			m.activeTab = max(m.activeTab-1, 0)
+			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			return m, nil
@@ -120,24 +153,37 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.TextInputs[0].Blur()
 				m.table.Blur()
 				m.textarea.Focus()
+
 			} else if m.focusIndex == 3 {
 				m.focusIndex = 0
 				m.TextInputs[0].Focus()
 				m.table.Blur()
 				m.textarea.Blur()
+
+	// Leaving textarea. Storing entry
+	current_table_row := m.table.SelectedRow()
+	current_table_index, _ := strconv.Atoi(current_table_row[0])
+	m.textareas[current_table_index] = fmt.Sprint(m.textarea.Value())
+	fmt.Printf("stored " + m.textareas[current_table_index] )
+
 			}
 
 			return m, nil
-		case "f1":
-			m.activeTab = max(m.activeTab-1, 0)
-			return m, nil
 		case "enter":
-			entered_text := strings.TrimSpace(m.TextInputs[0].View())
-			entered_text = strings.SplitN(entered_text, " ", 2)[1]
+			if m.focusIndex == 0 {
+				entered_text := strings.TrimSpace(m.TextInputs[0].View())
+				entered_text = strings.SplitN(entered_text, " ", 2)[1]
 
-			m.data = append(m.data, entered_text)
-			m.table = build_table(m.data)
-			m.TextInputs[0].SetValue("")
+				m.data = append(m.data, entered_text)
+				m.table = build_table(m.data)
+				m.TextInputs[0].SetValue("")
+
+				fill_in_textarea := ""
+				if len(m.textareas) > 0 {
+					fill_in_textarea = m.textareas[0]
+				}
+				m.textareas = append(m.textareas, fill_in_textarea)
+			}
 		}
 
 	}
@@ -228,13 +274,32 @@ func (m model) View() string {
 	} else {
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
+	
+	if m.focusIndex == 0 { doc.WriteString("\nEnter task") }
+	if m.focusIndex == 1 { 
+		doc.WriteString("\nIs this actionable?") 
+
+		/*current_table_row := m.table.SelectedRow()
+		if len(current_table_row) > 0 {
+			current_table_index, _ := strconv.Atoi(current_table_row[0])
+			m.textarea.SetValue( m.textareas[current_table_index] )
+		}*/
+
+	}
+	if m.focusIndex == 2 { 
+		sr := fmt.Sprintf("%v", m.table.SelectedRow() )
+		doc.WriteString("\nDesc for " + sr ) 
+	}
+
+
+	doc.WriteString( fmt.Sprintf("%v", m.table.SelectedRow() ))
 	return docStyle.Render(doc.String())
 }
 
 func main() {
 
 	tia := textarea.New()
-	tia.Placeholder = "Once upon a time..."
+	tia.Placeholder = "Elaboration of task..."
 
 	tb := build_table([]string{})
 
@@ -245,7 +310,10 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, TextInputs: make([]textinput.Model, 1), table: tb, textarea: tia, data: []string{}}
+	m := model{Tabs: tabs, TabContent: tabContent, 
+			TextInputs: make([]textinput.Model, 1), 
+			table: tb, textarea: tia, data: []string{}, 
+			activeID: -1, textareas: []string{} }
 
 	var t textinput.Model
 	for i := range m.TextInputs {
@@ -286,3 +354,5 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+
