@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textarea"
@@ -42,6 +42,7 @@ type model struct {
 	data       []string
 	activeID   int
 	textareas  []string
+	indexstore int
 }
 
 func (m model) Init() tea.Cmd {
@@ -64,17 +65,16 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	if m.focusIndex == 1 {
 		current_table_row := m.table.SelectedRow()
 		if len(current_table_row) > 0 {
-			current_table_index, _ := strconv.Atoi(current_table_row[0])
-			fmt.Printf("<%v>", current_table_index)
+			//current_table_index, _ := strconv.Atoi(current_table_row[0])
+			//fmt.Printf("<%v>", current_table_index)
 		}
 		// Changing selected entry. Retrieve entry for textarea
 		current_table_row2 := m.table.SelectedRow()
 		if len(current_table_row2) > 0 {
 			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
-			m.textarea.SetValue( m.textareas[current_table_index2] )
+			m.textarea.SetValue(m.textareas[current_table_index2])
 		}
 	}
-
 
 	return tea.Batch(cmds...)
 }
@@ -116,7 +116,6 @@ func build_table(a []string) table.Model {
 	tb.SetStyles(s)*/
 	return tb
 }
-
 
 /*
 func (e example) View() string {
@@ -160,11 +159,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.table.Blur()
 				m.textarea.Blur()
 
-	// Leaving textarea. Storing entry
-	current_table_row := m.table.SelectedRow()
-	current_table_index, _ := strconv.Atoi(current_table_row[0])
-	m.textareas[current_table_index] = fmt.Sprint(m.textarea.Value())
-	fmt.Printf("stored " + m.textareas[current_table_index] )
+				// Leaving textarea. Storing entry
+				current_table_row := m.table.SelectedRow()
+				current_table_index, _ := strconv.Atoi(current_table_row[0])
+				m.textareas[current_table_index] = fmt.Sprint(m.textarea.Value())
+				// fmt.Printf("stored " + m.textareas[current_table_index] )
 
 			}
 
@@ -174,15 +173,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				entered_text := strings.TrimSpace(m.TextInputs[0].View())
 				entered_text = strings.SplitN(entered_text, " ", 2)[1]
 
-				m.data = append(m.data, entered_text)
-				m.table = build_table(m.data)
-				m.TextInputs[0].SetValue("")
+				if m.indexstore == -1 {
+					m.data = append(m.data, entered_text)
+					m.table = build_table(m.data)
+					m.TextInputs[0].SetValue("")
 
-				fill_in_textarea := ""
-				if len(m.textareas) > 0 {
-					fill_in_textarea = m.textareas[0]
+					m.textarea.SetValue("")
+					fill_in_textarea := ""
+					if len(m.textareas) > 0 {
+						fill_in_textarea = m.textareas[0]
+					}
+					m.textareas = append(m.textareas, fill_in_textarea)
+				} else {
+					m.data[m.indexstore] = entered_text
+					m.table = build_table(m.data)
+					m.TextInputs[0].SetValue("")
 				}
-				m.textareas = append(m.textareas, fill_in_textarea)
+
+				// clear flag
+				m.indexstore = -1
+			}
+			if m.focusIndex == 1 {
+				// get text, fill into inputfield, raise flag that this is a correction
+				current_table_row := m.table.SelectedRow()
+				current_table_index, _ := strconv.Atoi(current_table_row[0])
+				current_table_string := current_table_row[1]
+				m.TextInputs[0].SetValue(current_table_string)
+
+				m.indexstore = current_table_index
+				// when this is a correction, we are not going to create a new entry, but use the registered flag
+				// move focus to textentry.
+				m.focusIndex = 0
+				m.TextInputs[0].Focus()
+				m.table.Blur()
+				m.textarea.Blur()
 			}
 		}
 
@@ -254,7 +278,11 @@ func (m model) View() string {
 	doc.WriteString("\n")
 
 	if m.activeTab == 0 {
-		x := fmt.Sprint(m.TextInputs[0].View())
+		x := ""
+		if m.indexstore != -1 {
+			x += fmt.Sprint("rewriting (", m.indexstore, ")")
+		}
+		x += fmt.Sprint(m.TextInputs[0].View())
 		x += "\n"
 		x += "\n"
 		x += m.table.View()
@@ -274,10 +302,12 @@ func (m model) View() string {
 	} else {
 		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
-	
-	if m.focusIndex == 0 { doc.WriteString("\nEnter task") }
-	if m.focusIndex == 1 { 
-		doc.WriteString("\nIs this actionable?") 
+
+	if m.focusIndex == 0 {
+		doc.WriteString("\nEnter task")
+	}
+	if m.focusIndex == 1 {
+		doc.WriteString("\nIs this actionable?")
 
 		/*current_table_row := m.table.SelectedRow()
 		if len(current_table_row) > 0 {
@@ -286,13 +316,12 @@ func (m model) View() string {
 		}*/
 
 	}
-	if m.focusIndex == 2 { 
-		sr := fmt.Sprintf("%v", m.table.SelectedRow() )
-		doc.WriteString("\nDesc for " + sr ) 
+	if m.focusIndex == 2 {
+		sr := fmt.Sprintf("%v", m.table.SelectedRow())
+		doc.WriteString("\nDesc for " + sr)
 	}
 
-
-	doc.WriteString( fmt.Sprintf("%v", m.table.SelectedRow() ))
+	doc.WriteString(fmt.Sprintf("%v", m.table.SelectedRow()))
 	return docStyle.Render(doc.String())
 }
 
@@ -310,10 +339,10 @@ func main() {
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent, 
-			TextInputs: make([]textinput.Model, 1), 
-			table: tb, textarea: tia, data: []string{}, 
-			activeID: -1, textareas: []string{} }
+	m := model{Tabs: tabs, TabContent: tabContent,
+		TextInputs: make([]textinput.Model, 1),
+		table:      tb, textarea: tia, data: []string{},
+		activeID: -1, textareas: []string{}, indexstore: -1}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
@@ -354,5 +383,3 @@ func min(a, b int) int {
 	}
 	return b
 }
-
-
