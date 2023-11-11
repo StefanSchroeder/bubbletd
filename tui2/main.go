@@ -11,6 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/pborman/ansi"
 )
 
 var (
@@ -79,7 +80,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func build_table(a []string) table.Model {
+func build_table(a []string, gotocursor int) table.Model {
 	columns := []table.Column{
 		{Title: "ID", Width: 4},
 		{Title: "Task", Width: 40},
@@ -102,6 +103,9 @@ func build_table(a []string) table.Model {
 		table.WithFocused(false),
 		table.WithHeight(5),
 	)
+	if gotocursor != -1 {
+		tb.SetCursor(gotocursor)
+	}
 
 	/*s := table.DefaultStyles()
 	s.Header = s.Header.
@@ -172,12 +176,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focusIndex == 0 {
 				entered_text := strings.TrimSpace(m.TextInputs[0].View())
 				entered_text = strings.SplitN(entered_text, " ", 2)[1]
+				d := []byte(entered_text)
+				d2, _ := ansi.Strip(d)
+				entered_text = string(d2)
 
 				if m.indexstore == -1 {
 					m.data = append(m.data, entered_text)
-					m.table = build_table(m.data)
+					m.table = build_table(m.data, m.table.Cursor())
 					m.TextInputs[0].SetValue("")
 
+					m.table.SetCursor(0)
 					m.textarea.SetValue("")
 					fill_in_textarea := ""
 					if len(m.textareas) > 0 {
@@ -186,7 +194,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textareas = append(m.textareas, fill_in_textarea)
 				} else {
 					m.data[m.indexstore] = entered_text
-					m.table = build_table(m.data)
+					m.table = build_table(m.data, m.table.Cursor())
 					m.TextInputs[0].SetValue("")
 				}
 
@@ -330,7 +338,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
-	tb := build_table([]string{})
+	tb := build_table([]string{}, 0)
 
 	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
