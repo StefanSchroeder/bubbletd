@@ -33,6 +33,18 @@ type Task struct {
 
 type Bubbletd []Task
 
+// Three part string
+// Command-Name TaskID New Title
+func (b Bubbletd) EditTitle(s string) {
+	a := strings.SplitN(s, " ", 3)
+	idx := b.GetTaskId(a[1])
+	if idx == -1 {
+		return
+	}
+
+	b[idx].Title = a[2]
+}
+
 func (b Bubbletd) Desc(s string) {
 	a := strings.SplitN(s, " ", 3)
 	idx := b.GetTaskId(a[1])
@@ -277,7 +289,6 @@ func (b *Bubbletd) Size() string {
 }
 
 func (b *Bubbletd) WriteConfig() {
-	fmt.Printf("Len-b %v XXXX", len(*b))
 	fmt.Printf("Writing data...\n")
 	file, _ := json.MarshalIndent(b, "", " ")
 	_ = ioutil.WriteFile("test.json", file, 0644)

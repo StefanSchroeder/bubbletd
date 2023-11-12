@@ -35,15 +35,12 @@ var (
 type model struct {
 	focusIndex int
 	Tabs       []string
-	TabContent []string
 	activeTab  int
 	TextInputs []textinput.Model
 	NewTask    string
 	table      table.Model
 	textarea   textarea.Model
 	data       []string
-	activeID   int
-	textareas  []string
 	indexstore int
 	btd        bubbletd.Bubbletd
 }
@@ -162,9 +159,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 				// Leaving textarea. Storing entry
 				current_table_row := m.table.SelectedRow()
-				current_table_index, _ := strconv.Atoi(current_table_row[0])
 				s := fmt.Sprint(m.textarea.Value())
-				m.textareas[current_table_index] = s
 				m.btd.Desc("desc " + current_table_row[0] + " " + s)
 			}
 
@@ -177,22 +172,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a new entry
 					m.btd.AddTask("add " + entered_text)
 					m.data = append(m.data, entered_text)
-					m.table = build_table(m.data, m.table.Cursor())
-					m.TextInputs[0].SetValue("")
+					titles := m.btd.GetTitles()
+					m.table = build_table(titles, m.table.Cursor())
 
 					m.table.SetCursor(0)
 					m.textarea.SetValue("")
-					fill_in_textarea := ""
-					if len(m.textareas) > 0 {
-						fill_in_textarea = "New"
-					}
-					m.textareas = append(m.textareas, fill_in_textarea)
 				} else {
 					// This is a rewritten entry
 					m.data[m.indexstore] = entered_text
+					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
 					m.table = build_table(m.data, m.table.Cursor())
-					m.TextInputs[0].SetValue("")
 				}
+				m.TextInputs[0].SetValue("")
 
 				// clear flag
 				m.indexstore = -1
@@ -293,11 +284,11 @@ func (m model) View() string {
 		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
 
 	} else if m.activeTab == 1 {
-		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render("abc"))
 	} else if m.activeTab == 2 {
-		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render("abc"))
 	} else {
-		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render("abc"))
 	}
 
 	if m.focusIndex == 0 {
@@ -324,17 +315,20 @@ func main() {
 
 	tb := build_table(btd.GetTitles(), 0)
 
-	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
-	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
+	tabs := []string{"Inbox    ", "Trash", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	ti := textinput.New()
 	ti.Placeholder = "Pikachu"
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
-	m := model{Tabs: tabs, TabContent: tabContent,
+	m := model{
+		Tabs: tabs, 
 		TextInputs: make([]textinput.Model, 1),
-		table:      tb, textarea: tia, data: btd.GetTitles(),
-		activeID: -1, textareas: btd.GetDescriptions(), indexstore: -1, btd: *btd}
+		table:      tb, 
+		textarea: tia, 
+		data: btd.GetTitles(),
+		indexstore: -1, 
+		btd: *btd}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
