@@ -66,8 +66,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 		// Changing selected entry. Retrieve entry for textarea
 		current_table_row2 := m.table.SelectedRow()
 		if len(current_table_row2) > 0 {
-			index := current_table_row2[0]
-			current_table_index2, _ := strconv.Atoi(index)
+			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
 			tf := m.btd[current_table_index2].Desc
 			m.textarea.SetValue(tf)
 		}
@@ -171,7 +170,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if m.indexstore == -1 {
 					// This is a new entry
 					m.btd.AddTask("add " + entered_text)
-					m.data = append(m.data, entered_text)
 					titles := m.btd.GetTitles()
 					m.table = build_table(titles, m.table.Cursor())
 
@@ -179,9 +177,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textarea.SetValue("")
 				} else {
 					// This is a rewritten entry
-					//m.data[m.indexstore] = entered_text
 					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
-					//m.table = build_table(m.data, m.table.Cursor())
 					titles := m.btd.GetTitles()
 					m.table = build_table(titles, m.table.Cursor())
 				}
@@ -271,7 +267,7 @@ func (m model) View() string {
 	if m.activeTab == 0 || m.activeTab > 0 {
 		x := ""
 		if m.indexstore != -1 {
-			x += fmt.Sprint("rewriting (", m.indexstore, ")")
+			x += fmt.Sprint("rewriting (", m.indexstore, ") ")
 		}
 		x += fmt.Sprint(m.TextInputs[0].View())
 		x += "\n"
@@ -335,7 +331,7 @@ func main() {
 	var t textinput.Model
 	for i := range m.TextInputs {
 		t = textinput.New()
-		t.CharLimit = 22
+		t.CharLimit = 32
 
 		switch i {
 		case 0:
