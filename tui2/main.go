@@ -179,9 +179,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textarea.SetValue("")
 				} else {
 					// This is a rewritten entry
-					m.data[m.indexstore] = entered_text
+					//m.data[m.indexstore] = entered_text
 					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
-					m.table = build_table(m.data, m.table.Cursor())
+					//m.table = build_table(m.data, m.table.Cursor())
+					titles := m.btd.GetTitles()
+					m.table = build_table(titles, m.table.Cursor())
 				}
 				m.TextInputs[0].SetValue("")
 
