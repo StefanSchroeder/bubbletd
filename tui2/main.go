@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/StefanSchroeder/bubbletd"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pborman/ansi"
-	"github.com/StefanSchroeder/bubbletd"
 )
 
 var (
@@ -65,17 +65,14 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	m.table, _ = m.table.Update(msg)
 	m.textarea, _ = m.textarea.Update(msg)
 
-	if m.focusIndex == 1 {
-		current_table_row := m.table.SelectedRow()
-		if len(current_table_row) > 0 {
-			//current_table_index, _ := strconv.Atoi(current_table_row[0])
-			//fmt.Printf("<%v>", current_table_index)
-		}
+	if m.focusIndex == 1 || m.focusIndex == 0 {
 		// Changing selected entry. Retrieve entry for textarea
 		current_table_row2 := m.table.SelectedRow()
 		if len(current_table_row2) > 0 {
-			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
-			m.textarea.SetValue(m.textareas[current_table_index2])
+			index := current_table_row2[0]
+			current_table_index2, _ := strconv.Atoi(index)
+			tf := m.btd[current_table_index2].Desc
+			m.textarea.SetValue(tf)
 		}
 	}
 
@@ -119,6 +116,16 @@ func build_table(a []string, gotocursor int) table.Model {
 	return tb
 }
 
+// CleanInputString removed ANSI control characters and the
+// prompt that for some reason is part of the input.
+func CleanInputString(s string) string {
+	entered_text := strings.TrimSpace(s)
+	entered_text = strings.SplitN(entered_text, " ", 2)[1]
+	d := []byte(entered_text)
+	d2, _ := ansi.Strip(d)
+	return (string(d2))
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -156,17 +163,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Leaving textarea. Storing entry
 				current_table_row := m.table.SelectedRow()
 				current_table_index, _ := strconv.Atoi(current_table_row[0])
-				m.textareas[current_table_index] = fmt.Sprint(m.textarea.Value())
+				s := fmt.Sprint(m.textarea.Value())
+				m.textareas[current_table_index] = s
+				m.btd.Desc("desc " + current_table_row[0] + " " + s)
 			}
 
 			return m, nil
 		case "enter":
 			if m.focusIndex == 0 {
-				entered_text := strings.TrimSpace(m.TextInputs[0].View())
-				entered_text = strings.SplitN(entered_text, " ", 2)[1]
-				d := []byte(entered_text)
-				d2, _ := ansi.Strip(d)
-				entered_text = string(d2)
+				entered_text := CleanInputString(m.TextInputs[0].View())
 
 				if m.indexstore == -1 {
 					// This is a new entry
@@ -179,7 +184,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textarea.SetValue("")
 					fill_in_textarea := ""
 					if len(m.textareas) > 0 {
-						fill_in_textarea = "New" 
+						fill_in_textarea = "New"
 					}
 					m.textareas = append(m.textareas, fill_in_textarea)
 				} else {
@@ -306,7 +311,6 @@ func (m model) View() string {
 		doc.WriteString("\nDesc for " + sr)
 	}
 
-	//doc.WriteString(fmt.Sprintf("%v", m.table.SelectedRow()))
 	return docStyle.Render(doc.String())
 }
 
@@ -317,7 +321,7 @@ func main() {
 
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
-	
+
 	tb := build_table(btd.GetTitles(), 0)
 
 	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
