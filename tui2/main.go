@@ -12,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/pborman/ansi"
+	"github.com/StefanSchroeder/bubbletd"
 )
 
 var (
@@ -44,6 +45,7 @@ type model struct {
 	activeID   int
 	textareas  []string
 	indexstore int
+	btd        bubbletd.Bubbletd
 }
 
 func (m model) Init() tea.Cmd {
@@ -93,10 +95,6 @@ func build_table(a []string, gotocursor int) table.Model {
 		rows = append(rows, []string{fmt.Sprint(i), j})
 	}
 
-	/*	for i, j := range a {
-		rows = append( rows, []string{fmt.Sprint(i), j } )
-	}*/
-
 	tb := table.New(
 		table.WithColumns(columns),
 		table.WithRows(rows),
@@ -121,16 +119,6 @@ func build_table(a []string, gotocursor int) table.Model {
 	return tb
 }
 
-/*
-func (e example) View() string {
-	return e.viewport.View() + e.helpView()
-}
-
-func (e example) helpView() string {
-	return helpStyle("\n  ↑/↓: Navigate • q: Quit\n")
-}
-*/
-
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -139,6 +127,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+k":
 			m.TextInputs[0].SetValue("")
 		case "ctrl+c", "esc":
+			m.btd.WriteConfig()
 			return m, tea.Quit
 		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
@@ -147,7 +136,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			return m, nil
 		case "tab":
-
 			m.focusIndex++
 
 			if m.focusIndex == 1 {
@@ -169,8 +157,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				current_table_row := m.table.SelectedRow()
 				current_table_index, _ := strconv.Atoi(current_table_row[0])
 				m.textareas[current_table_index] = fmt.Sprint(m.textarea.Value())
-				// fmt.Printf("stored " + m.textareas[current_table_index] )
-
 			}
 
 			return m, nil
@@ -183,6 +169,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				entered_text = string(d2)
 
 				if m.indexstore == -1 {
+					// This is a new entry
+					m.btd.AddTask("add " + entered_text)
 					m.data = append(m.data, entered_text)
 					m.table = build_table(m.data, m.table.Cursor())
 					m.TextInputs[0].SetValue("")
@@ -191,10 +179,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.textarea.SetValue("")
 					fill_in_textarea := ""
 					if len(m.textareas) > 0 {
-						fill_in_textarea = m.textareas[0]
+						fill_in_textarea = "New" 
 					}
 					m.textareas = append(m.textareas, fill_in_textarea)
 				} else {
+					// This is a rewritten entry
 					m.data[m.indexstore] = entered_text
 					m.table = build_table(m.data, m.table.Cursor())
 					m.TextInputs[0].SetValue("")
@@ -221,11 +210,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	}
-	/*if m.focusIndex > len(m.TextInputs) {
-		m.focusIndex = 0
-	} else if m.focusIndex < 0 {
-		m.focusIndex = len(m.TextInputs)
-	}*/
 
 	// Handle character input and blinking
 	cmd := m.updateInputs(msg)
@@ -244,7 +228,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.TextInputs[i].TextStyle = noStyle
 	}
 
-	// m.TextInput, _ = m.TextInput.Update(msg)
 	return m, cmd
 }
 
@@ -287,7 +270,7 @@ func (m model) View() string {
 	doc.WriteString(row)
 	doc.WriteString("\n")
 
-	if m.activeTab == 0 {
+	if m.activeTab == 0 || m.activeTab > 0 {
 		x := ""
 		if m.indexstore != -1 {
 			x += fmt.Sprint("rewriting (", m.indexstore, ")")
@@ -302,15 +285,14 @@ func (m model) View() string {
 		x += "\n"
 		x += m.textarea.View()
 
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
 
-		//doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TextInputs[0].View()))
 	} else if m.activeTab == 1 {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	} else if m.activeTab == 2 {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	} else {
-		doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
+		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(m.TabContent[m.activeTab]))
 	}
 
 	if m.focusIndex == 0 {
@@ -318,29 +300,25 @@ func (m model) View() string {
 	}
 	if m.focusIndex == 1 {
 		doc.WriteString("\nIs this actionable?")
-
-		/*current_table_row := m.table.SelectedRow()
-		if len(current_table_row) > 0 {
-			current_table_index, _ := strconv.Atoi(current_table_row[0])
-			m.textarea.SetValue( m.textareas[current_table_index] )
-		}*/
-
 	}
 	if m.focusIndex == 2 {
 		sr := fmt.Sprintf("%v", m.table.SelectedRow())
 		doc.WriteString("\nDesc for " + sr)
 	}
 
-	doc.WriteString(fmt.Sprintf("%v", m.table.SelectedRow()))
+	//doc.WriteString(fmt.Sprintf("%v", m.table.SelectedRow()))
 	return docStyle.Render(doc.String())
 }
 
 func main() {
 
+	btd := bubbletd.New()
+	btd.ReadConfig()
+
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
-
-	tb := build_table([]string{}, 0)
+	
+	tb := build_table(btd.GetTitles(), 0)
 
 	tabs := []string{"Inbox    ", "Trash    ", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	tabContent := []string{"inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Cal", "Del"}
@@ -351,8 +329,8 @@ func main() {
 	ti.Width = 20
 	m := model{Tabs: tabs, TabContent: tabContent,
 		TextInputs: make([]textinput.Model, 1),
-		table:      tb, textarea: tia, data: []string{},
-		activeID: -1, textareas: []string{}, indexstore: -1}
+		table:      tb, textarea: tia, data: btd.GetTitles(),
+		activeID: -1, textareas: btd.GetDescriptions(), indexstore: -1, btd: *btd}
 
 	var t textinput.Model
 	for i := range m.TextInputs {
@@ -378,6 +356,7 @@ func main() {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
+	fmt.Println("Good-bye")
 }
 
 func max(a, b int) int {

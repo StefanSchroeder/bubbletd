@@ -80,6 +80,22 @@ func New() *Bubbletd {
 	return &Bubbletd{}
 }
 
+func (b *Bubbletd) GetDescriptions() []string {
+	a := []string{}
+	for _, j := range *b {
+		a = append(a, j.Desc)
+	}
+	return a
+}
+
+func (b *Bubbletd) GetTitles() []string {
+	a := []string{}
+	for _, j := range *b {
+		a = append(a, j.Title)
+	}
+	return a
+}
+
 func (b *Bubbletd) PrintTasks() {
 	fmt.Println("********************")
 	for i, j := range *b {
@@ -256,11 +272,15 @@ func (b *Bubbletd) ReadConfig() {
 	}
 }
 
+func (b *Bubbletd) Size() string {
+	return fmt.Sprintf("Size <%v>", len(*b))
+}
+
 func (b *Bubbletd) WriteConfig() {
+	fmt.Printf("Len-b %v XXXX", len(*b))
 	fmt.Printf("Writing data...\n")
 	file, _ := json.MarshalIndent(b, "", " ")
 	_ = ioutil.WriteFile("test.json", file, 0644)
 	fmt.Printf("Done writing data.\n")
 }
-
 
