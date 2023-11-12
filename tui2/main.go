@@ -37,10 +37,8 @@ type model struct {
 	Tabs       []string
 	activeTab  int
 	TextInputs []textinput.Model
-	NewTask    string
 	table      table.Model
 	textarea   textarea.Model
-	data       []string
 	indexstore int
 	btd        bubbletd.Bubbletd
 }
@@ -75,7 +73,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func build_table(a []string, gotocursor int) table.Model {
+func (m *model) build_table(a []string, gotocursor int) table.Model {
 	columns := []table.Column{
 		{Title: "ID", Width: 4},
 		{Title: "Task", Width: 40},
@@ -85,7 +83,9 @@ func build_table(a []string, gotocursor int) table.Model {
 
 	for i := len(a) - 1; i >= 0; i-- {
 		j := a[i]
-		rows = append(rows, []string{fmt.Sprint(i), j})
+		//if m.btd[i].IsReference {
+			rows = append(rows, []string{fmt.Sprint(i), j})
+		//}
 	}
 
 	tb := table.New(
@@ -149,7 +149,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.TextInputs[0].Blur()
 				m.table.Blur()
 				m.textarea.Focus()
-
 			} else if m.focusIndex == 3 {
 				m.focusIndex = 0
 				m.TextInputs[0].Focus()
@@ -171,7 +170,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a new entry
 					m.btd.AddTask("add " + entered_text)
 					titles := m.btd.GetTitles()
-					m.table = build_table(titles, m.table.Cursor())
+					m.table = m.build_table(titles, m.table.Cursor())
 
 					m.table.SetCursor(0)
 					m.textarea.SetValue("")
@@ -179,7 +178,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a rewritten entry
 					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
 					titles := m.btd.GetTitles()
-					m.table = build_table(titles, m.table.Cursor())
+					m.table = m.build_table(titles, m.table.Cursor())
 				}
 				m.TextInputs[0].SetValue("")
 
@@ -202,7 +201,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textarea.Blur()
 			}
 		}
-
 	}
 
 	// Handle character input and blinking
@@ -311,7 +309,6 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
-	tb := build_table(btd.GetTitles(), 0)
 
 	tabs := []string{"Inbox    ", "Trash", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
 	ti := textinput.New()
@@ -320,13 +317,14 @@ func main() {
 	ti.CharLimit = 156
 	ti.Width = 20
 	m := model{
-		Tabs: tabs, 
+		Tabs:       tabs,
 		TextInputs: make([]textinput.Model, 1),
-		table:      tb, 
-		textarea: tia, 
-		data: btd.GetTitles(),
-		indexstore: -1, 
-		btd: *btd}
+		table:      table.New(),
+		textarea:   tia,
+		indexstore: -1,
+		btd:        *btd}
+
+	m.table = m.build_table(btd.GetTitles(), 0)
 
 	var t textinput.Model
 	for i := range m.TextInputs {
