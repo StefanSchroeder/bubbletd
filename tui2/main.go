@@ -175,7 +175,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.table.SetCursor(0)
 					m.textarea.SetValue("")
 				} else {
-					// This is a rewritten entry
+					// This is a rewrite entry
 					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
 					titles := m.btd.GetTitles()
 					m.table = m.build_table(titles, m.table.Cursor())
