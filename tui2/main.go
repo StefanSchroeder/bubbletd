@@ -73,7 +73,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m *model) build_table(a []string, gotocursor int) table.Model {
+func (m *model) build_table(a []string, gotocursor int, filter_state string) table.Model {
 	columns := []table.Column{
 		{Title: "ID", Width: 4},
 		{Title: "Task", Width: 40},
@@ -83,9 +83,9 @@ func (m *model) build_table(a []string, gotocursor int) table.Model {
 
 	for i := len(a) - 1; i >= 0; i-- {
 		j := a[i]
-		//if m.btd[i].IsReference {
+		if m.btd[i].State == filter_state {
 			rows = append(rows, []string{fmt.Sprint(i), j})
-		//}
+		}
 	}
 
 	tb := table.New(
@@ -97,6 +97,14 @@ func (m *model) build_table(a []string, gotocursor int) table.Model {
 	if gotocursor != -1 {
 		tb.SetCursor(gotocursor)
 	}
+
+		// XXX
+		current_table_row2 := m.table.SelectedRow()
+		if len(current_table_row2) > 0 {
+			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
+			tf := m.btd[current_table_index2].Desc
+			m.textarea.SetValue(tf)
+		}
 
 	/*s := table.DefaultStyles()
 	s.Header = s.Header.
@@ -134,9 +142,36 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
+			titles := m.btd.GetTitles()
+			switch m.activeTab {
+			case 0:
+				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
+			case 1:
+				m.table = m.build_table(titles, m.table.Cursor(), "Trash")
+			case 2:
+				m.table = m.build_table(titles, m.table.Cursor(), "Reference")
+			case 3:
+				m.table = m.build_table(titles, m.table.Cursor(), "Defer")
+			default:
+				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
+			}
 			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
+			titles := m.btd.GetTitles()
+			switch m.activeTab {
+			case 0:
+				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
+			case 1:
+				m.table = m.build_table(titles, m.table.Cursor(), "Trash")
+			case 2:
+				m.table = m.build_table(titles, m.table.Cursor(), "Reference")
+			case 3:
+				m.table = m.build_table(titles, m.table.Cursor(), "Defer")
+			default:
+				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
+			}
+				
 			return m, nil
 		case "tab":
 			m.focusIndex++
@@ -170,7 +205,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a new entry
 					m.btd.AddTask("add " + entered_text)
 					titles := m.btd.GetTitles()
-					m.table = m.build_table(titles, m.table.Cursor())
+					m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
 
 					m.table.SetCursor(0)
 					m.textarea.SetValue("")
@@ -178,7 +213,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a rewrite entry
 					m.btd.EditTitle("edit " + fmt.Sprint(m.indexstore) + " " + entered_text)
 					titles := m.btd.GetTitles()
-					m.table = m.build_table(titles, m.table.Cursor())
+					m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
 				}
 				m.TextInputs[0].SetValue("")
 
@@ -324,7 +359,7 @@ func main() {
 		indexstore: -1,
 		btd:        *btd}
 
-	m.table = m.build_table(btd.GetTitles(), 0)
+	m.table = m.build_table(btd.GetTitles(), 0, "Inbox")
 
 	var t textinput.Model
 	for i := range m.TextInputs {
