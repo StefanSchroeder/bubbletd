@@ -47,19 +47,19 @@ func main() {
 
 		// Print commands
 		case t == "pl":
-			btd.PrintFilter("IsToBeDelegated")
+			btd.PrintFilter("Delegated")
 		case t == "pu":
-			btd.PrintFilter("IsQueuelist")
+			btd.PrintFilter("Queue")
 		case t == "pq":
-			btd.PrintFilter("IsQuicklist")
+			btd.PrintFilter("Quick")
 		case t == "pt":
-			btd.PrintFilter("IsTrash")
+			btd.PrintFilter("Trash")
 		case t == "pr":
-			btd.PrintFilter("IsReference")
+			btd.PrintFilter("Reference")
 		case t == "po":
-			btd.PrintFilter("IsDone")
+			btd.PrintFilter("Done")
 		case t == "pd":
-			btd.PrintFilter("IsDeferred")
+			btd.PrintFilter("Defer")
 		case t == "p":
 			btd.PrintTasks()
 		case t == "help":

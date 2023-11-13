@@ -6,7 +6,7 @@ package bubbletd
 
 import (
 	"encoding/json"
-	"reflect"
+	//"reflect"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,18 +15,34 @@ import (
 	"time"
 )
 
+//              +-------- Waiting for some time --+ <--+
+//              v                                 |    |
+// Start -> State=Inbox        +--> State=Defer --+    |
+//              |              |                       |
+//          Actionable --No--> +--> State=Reference    |
+//              |              |                       |
+//             Yes             +--> State=Trash -->GC  |
+//              |                                      |
+//              +--------------+--> State=Delegate ----+
+//                             |
+//                             +--> State=Calendar -> Done
+//                             |
+//                             +--> State=Queue ----> Done
+//                             |
+//                             +--> State=Quick ----> Done
 type Task struct {
 	AddTime         string
 	Title           string
 	Desc            string
-	IsTrash         bool
-	IsReference     bool
-	IsDeferred      bool
+	State		string
+	//IsTrash         bool
+	//IsReference     bool
+	//IsDeferred      bool
 	DeferredTime    string
-	IsQuicklist     bool
-	IsQueuelist     bool
-	IsCalendarlist  bool
-	IsToBeDelegated bool
+	//IsQuicklist     bool
+	//IsQueuelist     bool
+	//IsCalendarlist  bool
+	//IsToBeDelegated bool
 	WaitingTime     string
 	IsDone          bool
 }
@@ -59,7 +75,7 @@ func (b Bubbletd) Delegatetask(s string) {
 	a := strings.SplitN(s, " ", 3)
 	idx := b.GetTaskId(a[1])
 
-	b[idx].IsToBeDelegated = true
+	b[idx].State = "Delegate"
 	b[idx].WaitingTime = a[2]
 	fmt.Printf("Hibernating until %v\n", b[idx].WaitingTime)
 }
@@ -71,7 +87,7 @@ func (b Bubbletd) Defertask(s string) {
 		return
 	}
 
-	b[idx].IsDeferred = true
+	b[idx].State = "Defer"
 	now := time.Now()
 	// default is to add one day
 	nowplus := now.AddDate(0, 0, 1)
@@ -118,9 +134,9 @@ func (b *Bubbletd) PrintTasks() {
 
 // printFilter generically looks up the boolean of the Tasks-struct and
 // will print it only when the field is true.
-func (b *Bubbletd) PrintFilter(s string) {
-	for i, j := range *b {
-		if GetField(&j, s) {
+func (b Bubbletd) PrintFilter(s string) {
+	for i, j := range b {
+		if j.State == s {
 			fmt.Println(i, j)
 		}
 	}
@@ -135,14 +151,15 @@ func (b *Bubbletd) AddTask(s string) {
 		now.String(), // AddTime
 		title,            // Title
 		"empty",      // Desc
-		false,        // not actionable, IsTrash
-		false,        // not actionable, IsReference
-		false,        // not actionable, IsDeferred
+		"Inbox",      // State
+		//false,        // not actionable, IsTrash
+		//false,        // not actionable, IsReference
+		//false,        // not actionable, IsDeferred
 		"none",       // not actionable, DeferredTime
-		false,        // actionable, IsQuicklist
-		false,        // actionable, IsQueuelist
-		false,        // actionable, IsCalendarlist
-		false,        // actionable, IsToBeDelegated
+		//false,        // actionable, IsQuicklist
+		//false,        // actionable, IsQueuelist
+		//false,        // actionable, IsCalendarlist
+		//false,        // actionable, IsToBeDelegated
 		"none",       // Waiting Time until delegation ends
 		false,        // isDone
 	}
@@ -151,11 +168,11 @@ func (b *Bubbletd) AddTask(s string) {
 
 // getField uses reflection of find the boolean struct field
 // given as argument.
-func GetField(v *Task, field string) bool {
+/*func GetField(v *Task, field string) bool {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Bool()
-}
+}*/
 
 func (b Bubbletd) GetTaskId(indexstring string) int {
 	idx, err := strconv.Atoi(indexstring)
@@ -177,7 +194,7 @@ func (b Bubbletd) Refer(s string) {
 		return
 	}
 
-	b[idx].IsReference = true
+	b[idx].State = "Reference"
 }
 
 func (b Bubbletd) MoveToBeDelegated(s string) {
@@ -187,7 +204,7 @@ func (b Bubbletd) MoveToBeDelegated(s string) {
 		return
 	}
 
-	b[idx].IsToBeDelegated = true
+	b[idx].State = "Delegate"
 }
 
 func (b Bubbletd) MoveDone(s string) {
@@ -197,7 +214,7 @@ func (b Bubbletd) MoveDone(s string) {
 		return
 	}
 
-	b[idx].IsDone = true
+	b[idx].State = "Done"
 }
 
 func (b Bubbletd) MoveCalendarlist(s string) {
@@ -207,7 +224,7 @@ func (b Bubbletd) MoveCalendarlist(s string) {
 		return
 	}
 
-	b[idx].IsCalendarlist = true
+	b[idx].State = "Calendar"
 }
 
 func (b Bubbletd) MoveQueuelist(s string) {
@@ -217,7 +234,7 @@ func (b Bubbletd) MoveQueuelist(s string) {
 		return
 	}
 
-	b[idx].IsQueuelist = true
+	b[idx].State = "Queue"
 }
 
 func (b Bubbletd) MoveQuicklist(s string) {
@@ -227,7 +244,7 @@ func (b Bubbletd) MoveQuicklist(s string) {
 		return
 	}
 
-	b[idx].IsQuicklist = true
+	b[idx].State = "Quick"
 }
 
 func (b Bubbletd) Trash(s string) {
@@ -237,7 +254,7 @@ func (b Bubbletd) Trash(s string) {
 		return
 	}
 
-	b[idx].IsTrash = true
+	b[idx].State = "Trash"
 }
 
 func PrintHelp() {
