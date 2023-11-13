@@ -155,6 +155,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			default:
 				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
 			}
+	m.updateInputs(msg)
 			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
@@ -172,6 +173,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
 			}
 				
+	m.updateInputs(msg)
 			return m, nil
 		case "tab":
 			m.focusIndex++
