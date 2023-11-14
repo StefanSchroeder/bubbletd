@@ -67,6 +67,8 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
 			tf := m.btd[current_table_index2].Desc
 			m.textarea.SetValue(tf)
+		} else {
+			m.textarea.SetValue("nuffin2")
 		}
 	}
 
@@ -104,7 +106,10 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
 			tf := m.btd[current_table_index2].Desc
 			m.textarea.SetValue(tf)
+		} else {
+			m.textarea.SetValue("nuffin")
 		}
+			
 
 	/*s := table.DefaultStyles()
 	s.Header = s.Header.
