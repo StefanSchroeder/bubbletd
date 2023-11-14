@@ -44,7 +44,7 @@ type Task struct {
 	//IsCalendarlist  bool
 	//IsToBeDelegated bool
 	WaitingTime     string
-	IsDone          bool
+	//IsDone          bool
 }
 
 type Bubbletd []Task
@@ -161,7 +161,7 @@ func (b *Bubbletd) AddTask(s string) {
 		//false,        // actionable, IsCalendarlist
 		//false,        // actionable, IsToBeDelegated
 		"none",       // Waiting Time until delegation ends
-		false,        // isDone
+		//false,        // isDone
 	}
 	*b = append(*b, newtask)
 }

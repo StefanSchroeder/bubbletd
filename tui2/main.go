@@ -100,16 +100,15 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		tb.SetCursor(gotocursor)
 	}
 
-		// XXX
-		current_table_row2 := m.table.SelectedRow()
-		if len(current_table_row2) > 0 {
-			current_table_index2, _ := strconv.Atoi(current_table_row2[0])
-			tf := m.btd[current_table_index2].Desc
-			m.textarea.SetValue(tf)
-		} else {
-			m.textarea.SetValue("nuffin")
-		}
-			
+	// XXX
+	current_table_row2 := m.table.SelectedRow()
+	if len(current_table_row2) > 0 {
+		current_table_index2, _ := strconv.Atoi(current_table_row2[0])
+		tf := m.btd[current_table_index2].Desc
+		m.textarea.SetValue(tf)
+	} else {
+		m.textarea.SetValue("nuffin")
+	}
 
 	/*s := table.DefaultStyles()
 	s.Header = s.Header.
@@ -141,44 +140,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+k":
-			m.TextInputs[0].SetValue("")
+		case "y", "n":
+			if m.focusIndex == 1 {
+				current_table_row := m.table.SelectedRow()
+				m.btd.Desc("desc " + current_table_row[0] + " " + "yn")
+			}
+			return m, nil
 		case "ctrl+c", "esc":
 			m.btd.WriteConfig()
 			return m, tea.Quit
 		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
 			titles := m.btd.GetTitles()
-			switch m.activeTab {
-			case 0:
-				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
-			case 1:
-				m.table = m.build_table(titles, m.table.Cursor(), "Trash")
-			case 2:
-				m.table = m.build_table(titles, m.table.Cursor(), "Reference")
-			case 3:
-				m.table = m.build_table(titles, m.table.Cursor(), "Defer")
-			default:
-				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
-			}
-	m.updateInputs(msg)
+			tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
+			m.table = m.build_table(titles, m.table.Cursor(), tabs[m.activeTab])
+			m.updateInputs(msg)
 			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			titles := m.btd.GetTitles()
-			switch m.activeTab {
-			case 0:
-				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
-			case 1:
-				m.table = m.build_table(titles, m.table.Cursor(), "Trash")
-			case 2:
-				m.table = m.build_table(titles, m.table.Cursor(), "Reference")
-			case 3:
-				m.table = m.build_table(titles, m.table.Cursor(), "Defer")
-			default:
-				m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
-			}
-				
-	m.updateInputs(msg)
+			tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
+			m.table = m.build_table(titles, m.table.Cursor(), tabs[m.activeTab])
+			m.updateInputs(msg)
 			return m, nil
 		case "tab":
 			m.focusIndex++
@@ -351,8 +334,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
-
-	tabs := []string{"Inbox    ", "Trash", "Reference     ", "Deferred", "Quick", "Queue", "Calendar", "Delegated"}
+	tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
 	ti := textinput.New()
 	ti.Placeholder = "Pikachu"
 	ti.Focus()
