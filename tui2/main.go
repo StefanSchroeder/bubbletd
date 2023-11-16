@@ -140,11 +140,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
 		case "ctrl+k":
-		case "y", "n":
-			if m.focusIndex == 1 {
-				current_table_row := m.table.SelectedRow()
-				m.btd.Desc("desc " + current_table_row[0] + " " + "yn")
-			}
+			m.TextInputs[0].SetValue("")
+			return m, nil
+		case "ctrl+y":
+			fmt.Println("Y")	
 			return m, nil
 		case "ctrl+c", "esc":
 			m.btd.WriteConfig()
