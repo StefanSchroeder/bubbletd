@@ -142,9 +142,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+k":
 			m.TextInputs[0].SetValue("")
 			return m, nil
-		case "ctrl+y":
-			fmt.Println("Y")	
-			return m, nil
+		case "ctrl+t":
+			if m.focusIndex == 1 {
+				current_table_row := m.table.SelectedRow()
+				current_table_index, _ := strconv.Atoi(current_table_row[0])
+			//	current_table_string := current_table_row[1]
+
+				m.btd[current_table_index].State = "Trash"
+			}
+	//		return m, nil
 		case "ctrl+c", "esc":
 			m.btd.WriteConfig()
 			return m, tea.Quit
@@ -261,6 +267,16 @@ func (m model) View() string {
 	var renderedTabs []string
 
 	for i, t := range m.Tabs {
+
+
+// The inefficieny of this makes my skin crawl.
+cnt := 0
+for _, j := range m.btd {
+	if t == j.State {
+		cnt += 1
+	}
+}
+cntS := fmt.Sprintf(" (%02d)", cnt)
 		var style lipgloss.Style
 		isFirst, isLast, isActive := i == 0, i == len(m.Tabs)-1, i == m.activeTab
 		if isActive {
@@ -279,7 +295,7 @@ func (m model) View() string {
 			border.BottomRight = "┤"
 		}
 		style = style.Border(border)
-		renderedTabs = append(renderedTabs, style.Render(t))
+		renderedTabs = append(renderedTabs, style.Render(t + cntS))
 	}
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
