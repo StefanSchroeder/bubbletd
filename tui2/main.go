@@ -146,19 +146,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focusIndex == 1 {
 				current_table_row := m.table.SelectedRow()
 				current_table_index, _ := strconv.Atoi(current_table_row[0])
-			//	current_table_string := current_table_row[1]
 
 				m.btd[current_table_index].State = "Trash"
+
+				titles := m.btd.GetTitles()
+				tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
+				m.table = m.build_table(titles, m.table.Cursor(), tabs[m.activeTab])
+				m.View()
 			}
-	//		return m, nil
+			return m, nil
 		case "ctrl+c", "esc":
 			m.btd.WriteConfig()
 			return m, tea.Quit
 		case "f1":
 			m.activeTab = max(m.activeTab-1, 0)
 			titles := m.btd.GetTitles()
-			tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
-			m.table = m.build_table(titles, m.table.Cursor(), tabs[m.activeTab])
+			//tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
+			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
 			m.updateInputs(msg)
 			return m, nil
 		case "f2":
@@ -186,6 +190,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.textarea.Blur()
 
 				// Leaving textarea. Storing entry
+// TODO Also need to do this on F1/F2
 				current_table_row := m.table.SelectedRow()
 				s := fmt.Sprint(m.textarea.Value())
 				m.btd.Desc("desc " + current_table_row[0] + " " + s)
