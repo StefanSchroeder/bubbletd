@@ -17,7 +17,7 @@ import (
 
 //              +-------- Waiting for some time --+ <--+
 //              v                                 |    |
-// Start -> State=Inbox        +--> State=Defer --+    |
+// Start -> State=Inbox        +--> State=Later --+    |
 //              |              |                       |
 //          Actionable --No--> +--> State=Reference    |
 //              |              |                       |
@@ -87,7 +87,7 @@ func (b Bubbletd) Defertask(s string) {
 		return
 	}
 
-	b[idx].State = "Defer"
+	b[idx].State = "Later"
 	now := time.Now()
 	// default is to add one day
 	nowplus := now.AddDate(0, 0, 1)

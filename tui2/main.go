@@ -21,9 +21,11 @@ var (
 	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2).Align(lipgloss.Left)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
-	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
+	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(lipgloss.Color("111"))
 	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 2).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 
+	nonactionStyleA     = lipgloss.NewStyle().Foreground(lipgloss.Color("111"))
+	nonactionStyleB     = focusedStyle.Copy()
 	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cursorStyle         = focusedStyle.Copy()
@@ -68,7 +70,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 			tf := m.btd[current_table_index2].Desc
 			m.textarea.SetValue(tf)
 		} else {
-			m.textarea.SetValue("nuffin2")
+			m.textarea.SetValue("")
 		}
 	}
 
@@ -133,6 +135,22 @@ func CleanInputString(s string) string {
 	return (string(d2))
 }
 
+func (m *model) MoveEntryToState(s string) {
+	if m.focusIndex == 1 {
+		current_table_row := m.table.SelectedRow()
+		if len(current_table_row) > 0 {
+			current_table_index, _ := strconv.Atoi(current_table_row[0])
+
+			m.btd[current_table_index].State = s
+
+			titles := m.btd.GetTitles()
+			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
+			m.View()
+			m.table.View()
+		}
+	}
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
@@ -141,33 +159,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+k":
 			m.TextInputs[0].SetValue("")
 			return m, nil
+		case "ctrl+f":
+			m.MoveEntryToState("Float")
+			return m, nil
+		case "ctrl+q":
+			m.MoveEntryToState("Quick")
+			return m, nil
+		case "ctrl+f":
+			m.MoveEntryToState("Fin")
+			return m, nil
+		case "ctrl+s":
+			m.MoveEntryToState("Someone")
+			return m, nil
+		case "ctrl+d":
+			m.MoveEntryToState("Dairy")
+			return m, nil
 		case "ctrl+r":
-			if m.focusIndex == 1 {
-				current_table_row := m.table.SelectedRow()
-				if len(current_table_row) > 0 {
-					current_table_index, _ := strconv.Atoi(current_table_row[0])
-
-					m.btd[current_table_index].State = "Reference"
-
-					titles := m.btd.GetTitles()
-					m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
-					m.View()
-				}
-			}
+			m.MoveEntryToState("Reference")
+			return m, nil
+		case "ctrl+l":
+			m.MoveEntryToState("Later")
 			return m, nil
 		case "ctrl+t":
-			if m.focusIndex == 1 {
-				current_table_row := m.table.SelectedRow()
-				if len(current_table_row) > 0 {
-					current_table_index, _ := strconv.Atoi(current_table_row[0])
-
-					m.btd[current_table_index].State = "Trash"
-
-					titles := m.btd.GetTitles()
-					m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
-					m.View()
-				}
-			}
+			m.MoveEntryToState("Trash")
 			return m, nil
 		case "ctrl+c", "esc":
 			m.btd.WriteConfig()
@@ -218,7 +232,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					// This is a new entry
 					m.btd.AddTask("add " + entered_text)
 					titles := m.btd.GetTitles()
+
+					m.activeTab = 0
 					m.table = m.build_table(titles, m.table.Cursor(), "Inbox")
+					m.updateInputs(msg)
 
 					m.table.SetCursor(0)
 					m.textarea.SetValue("")
@@ -242,8 +259,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.TextInputs[0].SetValue(current_table_string)
 
 					m.indexstore = current_table_index
-				// when this is a correction, we are not going to create a new entry, but use the registered flag
-				// move focus to textentry.
+					// when this is a correction, we are not going to create a new entry, but use the registered flag
+					// move focus to textentry.
 					m.focusIndex = 0
 					m.TextInputs[0].Focus()
 					m.table.Blur()
@@ -288,15 +305,14 @@ func (m model) View() string {
 
 	for i, t := range m.Tabs {
 
-
-// The inefficieny of this makes my skin crawl.
-cnt := 0
-for _, j := range m.btd {
-	if t == j.State {
-		cnt += 1
-	}
-}
-cntS := fmt.Sprintf(" (%02d)", cnt)
+		// The inefficieny of this makes my skin crawl.
+		cnt := 0
+		for _, j := range m.btd {
+			if t == j.State {
+				cnt += 1
+			}
+		}
+		cntS := fmt.Sprintf(" (%02d)", cnt)
 		var style lipgloss.Style
 		isFirst, isLast, isActive := i == 0, i == len(m.Tabs)-1, i == m.activeTab
 		if isActive {
@@ -315,7 +331,7 @@ cntS := fmt.Sprintf(" (%02d)", cnt)
 			border.BottomRight = "┤"
 		}
 		style = style.Border(border)
-		renderedTabs = append(renderedTabs, style.Render(t + cntS))
+		renderedTabs = append(renderedTabs, style.Render(t+cntS))
 	}
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, renderedTabs...)
@@ -350,13 +366,13 @@ cntS := fmt.Sprintf(" (%02d)", cnt)
 	if m.focusIndex == 0 {
 		doc.WriteString("\nEnter task")
 	}
-	if m.focusIndex == 1 {
+	/*if m.focusIndex == 1 {
 		doc.WriteString("\nIs this actionable?")
 	}
 	if m.focusIndex == 2 {
 		sr := fmt.Sprintf("%v", m.table.SelectedRow())
 		doc.WriteString("\nDesc for " + sr)
-	}
+	}*/
 
 	return docStyle.Render(doc.String())
 }
@@ -369,7 +385,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
-	tabs := []string{"Inbox", "Trash", "Reference", "Deferred", "Quick", "Queue", "Calendar", "Delegated", "Done"}
+	tabs := []string{"Inbox", "Trash", "Reference", "Later", "Quick", "Float", "Dairy", "Someone", "Fin"}
 	ti := textinput.New()
 	ti.Placeholder = "Pikachu"
 	ti.Focus()
