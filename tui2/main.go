@@ -20,8 +20,10 @@ var (
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
 	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2).Align(lipgloss.Left)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	nonactionColor    = lipgloss.AdaptiveColor{Light: "#FF0000", Dark: "#FF0000"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(lipgloss.Color("111"))
+	redTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(nonactionColor)
 	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 2).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 
 	nonactionStyleA     = lipgloss.NewStyle().Foreground(lipgloss.Color("111"))
@@ -165,8 +167,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+q":
 			m.MoveEntryToState("Quick")
 			return m, nil
-		case "ctrl+f":
-			m.MoveEntryToState("Fin")
+		case "ctrl+a":
+			m.MoveEntryToState("Attic")
 			return m, nil
 		case "ctrl+s":
 			m.MoveEntryToState("Someone")
@@ -319,6 +321,9 @@ func (m model) View() string {
 			style = activeTabStyle.Copy()
 		} else {
 			style = inactiveTabStyle.Copy()
+			if t == "Trash" {
+				style = redTabStyle.Copy()
+			}
 		}
 		border, _, _, _, _ := style.GetBorder()
 		if isFirst && isActive {
@@ -385,7 +390,7 @@ func main() {
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
-	tabs := []string{"Inbox", "Trash", "Reference", "Later", "Quick", "Float", "Dairy", "Someone", "Fin"}
+	tabs := []string{"Inbox", "Trash", "Reference", "Later", "Quick", "Float", "Dairy", "Someone", "Attic"}
 	ti := textinput.New()
 	ti.Placeholder = "Pikachu"
 	ti.Focus()
