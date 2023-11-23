@@ -24,8 +24,8 @@ var (
 	nonactionColorHi    = lipgloss.AdaptiveColor{Light: "#FF0000", Dark: "#FF0000"}
 	nonactionColorLo    = lipgloss.AdaptiveColor{Light: "#770000", Dark: "#770000"}
 
-	actionColorHi    = lipgloss.AdaptiveColor{Light: "#0000FF", Dark: "#0000FF"}
-	actionColorLo    = lipgloss.AdaptiveColor{Light: "#000077", Dark: "#000077"}
+	actionColorHi    = lipgloss.AdaptiveColor{Light: "#00FF00", Dark: "#00FF00"}
+	actionColorLo    = lipgloss.AdaptiveColor{Light: "#007700", Dark: "#007700"}
 
 	inactiveTabStyle  =     lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Copy().Border(  activeTabBorder, true).Foreground(lipgloss.Color("111"))
@@ -122,7 +122,7 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		table.WithColumns(columns),
 		table.WithRows(rows),
 		table.WithFocused(false),
-		table.WithHeight(5),
+		table.WithHeight(10),
 	)
 	if gotocursor != -1 {
 		tb.SetCursor(gotocursor)
