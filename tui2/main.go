@@ -20,10 +20,22 @@ var (
 	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
 	docStyle          = lipgloss.NewStyle().Padding(1, 2, 1, 2).Align(lipgloss.Left)
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	nonactionColor    = lipgloss.AdaptiveColor{Light: "#FF0000", Dark: "#FF0000"}
-	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
-	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(lipgloss.Color("111"))
-	redTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(nonactionColor)
+
+	nonactionColorHi    = lipgloss.AdaptiveColor{Light: "#FF0000", Dark: "#FF0000"}
+	nonactionColorLo    = lipgloss.AdaptiveColor{Light: "#770000", Dark: "#770000"}
+
+	actionColorHi    = lipgloss.AdaptiveColor{Light: "#0000FF", Dark: "#0000FF"}
+	actionColorLo    = lipgloss.AdaptiveColor{Light: "#000077", Dark: "#000077"}
+
+	inactiveTabStyle  =     lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
+	activeTabStyle    = inactiveTabStyle.Copy().Border(  activeTabBorder, true).Foreground(lipgloss.Color("111"))
+
+	redactiveTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(nonactionColorHi)
+	redinactiveTabStyle    = inactiveTabStyle.Copy().Border(inactiveTabBorder, true).Foreground(nonactionColorLo)
+
+	blueactiveTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true).Foreground(actionColorHi)
+	blueinactiveTabStyle    = inactiveTabStyle.Copy().Border(inactiveTabBorder, true).Foreground(actionColorLo)
+
 	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 2).Align(lipgloss.Left).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 
 	nonactionStyleA     = lipgloss.NewStyle().Foreground(lipgloss.Color("111"))
@@ -45,6 +57,18 @@ type model struct {
 	textarea   textarea.Model
 	indexstore int
 	btd        bubbletd.Bubbletd
+}
+
+var isNonactionable = map[string]bool{
+    "Trash": true,
+    "Reference":   true,
+    "Later": true,
+}
+var isActionable = map[string]bool{
+    "Quick": true,
+    "Float":   true,
+    "Dairy": true,
+    "Someone": true,
 }
 
 func (m model) Init() tea.Cmd {
@@ -319,10 +343,19 @@ func (m model) View() string {
 		isFirst, isLast, isActive := i == 0, i == len(m.Tabs)-1, i == m.activeTab
 		if isActive {
 			style = activeTabStyle.Copy()
+			if isNonactionable[t] {
+				style = redactiveTabStyle.Copy()
+			}
+			if isActionable[t] {
+				style = blueactiveTabStyle.Copy()
+			}
 		} else {
 			style = inactiveTabStyle.Copy()
-			if t == "Trash" {
-				style = redTabStyle.Copy()
+			if isNonactionable[t] {
+				style = redinactiveTabStyle.Copy()
+			}
+			if isActionable[t] {
+				style = blueinactiveTabStyle.Copy()
 			}
 		}
 		border, _, _, _, _ := style.GetBorder()
