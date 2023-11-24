@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -290,10 +291,18 @@ p		print all
 }
 
 func (b *Bubbletd) Review() {
-	a := []string{}
+
+	//today := time.Now()
+	//a := []string{}
+	r, _ := regexp.Compile(`AWAKE:(\d\d\d\d-\d\d-\d\d)`)
 	for _, j := range *b {
-		a = append(a, j.Desc)
+		//a = append(a, j.Desc)
+		fmt.Println(r.FindStringSubmatch(j.Desc))
+		if strings.Contains(j.Desc, "AWAKE") {
+			fmt.Println(">", j.Desc, "<")
+		}
 	}
+	return 
 }
 
 func (b *Bubbletd) ReadConfig() {
