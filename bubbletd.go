@@ -289,6 +289,13 @@ p		print all
 	fmt.Printf(s)
 }
 
+func (b *Bubbletd) Review() {
+	a := []string{}
+	for _, j := range *b {
+		a = append(a, j.Desc)
+	}
+}
+
 func (b *Bubbletd) ReadConfig() {
 	content, err := ioutil.ReadFile("./test.json")
 	if err != nil {

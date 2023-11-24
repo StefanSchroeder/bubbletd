@@ -420,6 +420,8 @@ func main() {
 	btd := bubbletd.New()
 	btd.ReadConfig()
 
+	btd.Review()
+
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
 
@@ -459,7 +461,9 @@ func main() {
 		m.TextInputs[i] = t
 	}
 
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	p := tea.NewProgram(m, tea.WithAltScreen())
+	//if _, err := tea.NewProgram(m).Run(); err != nil {
+	if _, err := p.Run(); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)
 	}
