@@ -217,15 +217,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			titles := m.btd.GetTitles()
 			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
 			m.updateInputs(msg)
+				m.focusIndex = 0
+				m.TextInputs[0].Focus()
 			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			titles := m.btd.GetTitles()
 			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
 			m.updateInputs(msg)
+				m.focusIndex = 0
+				m.TextInputs[0].Focus()
 			return m, nil
 		case "tab":
 			if len(m.table.SelectedRow()) == 0 {
+				m.focusIndex = 0
+				m.TextInputs[0].Focus()
 				return m, nil
 			}
 			m.focusIndex++
