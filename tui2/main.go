@@ -225,6 +225,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.updateInputs(msg)
 			return m, nil
 		case "tab":
+			if len(m.table.SelectedRow()) == 0 {
+				return m, nil
+			}
 			m.focusIndex++
 
 			if m.focusIndex == 1 {
@@ -384,12 +387,16 @@ func (m model) View() string {
 		x += fmt.Sprint(m.TextInputs[0].View())
 		x += "\n"
 		x += "\n"
-		x += m.table.View()
-		x += "\n"
-		x += "\n"
-		x += "Description\n"
-		x += "\n"
-		x += m.textarea.View()
+		if len(m.table.SelectedRow()) > 0 {
+			x += m.table.View()
+			x += "\n"
+			x += "\n"
+			x += "Description\n"
+			x += "\n"
+			x += m.textarea.View()
+		} else {
+			x += strings.Repeat("\n", 19)
+		}
 
 		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(x))
 
@@ -401,10 +408,10 @@ func (m model) View() string {
 		doc.WriteString(windowStyle.Width(4 + (lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render("abc"))
 	}
 
-	if m.focusIndex == 0 {
+	/*if m.focusIndex == 0 {
 		doc.WriteString("\nEnter task")
 	}
-	/*if m.focusIndex == 1 {
+	if m.focusIndex == 1 {
 		doc.WriteString("\nIs this actionable?")
 	}
 	if m.focusIndex == 2 {
@@ -421,8 +428,6 @@ func main() {
 	btd.ReadConfig()
 
 	btd.Review()
-
-fmt.Println(btd)
 
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."
