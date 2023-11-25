@@ -245,7 +245,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				current_table_row := m.table.SelectedRow()
 				if len(current_table_row) > 0 {
 					s := fmt.Sprint(m.textarea.Value())
-					m.btd.Desc("desc " + current_table_row[0] + " " + s)
+					m.btd.SetDesc("desc " + current_table_row[0] + " " + s)
 				}
 			}
 
@@ -421,6 +421,8 @@ func main() {
 	btd.ReadConfig()
 
 	btd.Review()
+
+fmt.Println(btd)
 
 	tia := textarea.New()
 	tia.Placeholder = "Elaboration of task..."

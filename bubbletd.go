@@ -62,7 +62,7 @@ func (b Bubbletd) EditTitle(s string) {
 	b[idx].Title = a[2]
 }
 
-func (b Bubbletd) Desc(s string) {
+func (b Bubbletd) SetDesc(s string) {
 	a := strings.SplitN(s, " ", 3)
 	idx := b.GetTaskId(a[1])
 	if idx == -1 {
@@ -289,18 +289,37 @@ p		print all
 `
 	fmt.Printf(s)
 }
-
-func (b *Bubbletd) Review() {
-
-	//today := time.Now()
-	//a := []string{}
-	r, _ := regexp.Compile(`AWAKE:(\d\d\d\d-\d\d-\d\d)`)
-	for _, j := range *b {
-		//a = append(a, j.Desc)
-		fmt.Println(r.FindStringSubmatch(j.Desc))
-		if strings.Contains(j.Desc, "AWAKE") {
-			fmt.Println(">", j.Desc, "<")
+// isAfter will find out if the passed string contains a
+// date that is after or equal today.
+// The string must contain a substring of the form 
+// AWAKE:YYYY-MM-DD.
+func isToBeUpdated(s string) bool {
+	now := time.Now()
+	r := regexp.MustCompile(`AWAKE:(\d\d\d\d-\d\d-\d\d)`)
+	m := r.FindStringSubmatch(s)
+	if len(m) > 0 {
+		theTime, err := time.Parse("2006-01-02", m[1])
+		if err != nil {
+			fmt.Println("Could not parse time:", err)
+			return false
 		}
+		if theTime.Before(now) {
+			return true
+		}
+	}
+	return false
+}
+	
+func (b Bubbletd) Review() {
+
+	// Check if there is any passed date in descriptions.
+	for idx, j := range b {
+		// if yes, move back to inbox
+		if isToBeUpdated(j.Desc) {
+			j.Desc = strings.Replace(j.Desc, "AWAKE", "AWOKEN", 1)
+			j.State = "Inbox"
+			b[idx] = j
+		} 
 	}
 	return 
 }
