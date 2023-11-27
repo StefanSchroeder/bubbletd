@@ -137,7 +137,7 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		m.textarea.SetValue("")
 	}
 
-	/*s := table.DefaultStyles()
+	s := table.DefaultStyles()
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(lipgloss.Color("240")).
@@ -147,7 +147,7 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		Foreground(lipgloss.Color("229")).
 		Background(lipgloss.Color("57")).
 		Bold(false)
-	tb.SetStyles(s)*/
+	tb.SetStyles(s)
 	return tb
 }
 
@@ -218,16 +218,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			titles := m.btd.GetTitles()
 			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
 			m.updateInputs(msg)
-				m.focusIndex = 0
-				m.TextInputs[0].Focus()
+			m.focusIndex = 0
+			m.TextInputs[0].Focus()
 			return m, nil
 		case "f2":
 			m.activeTab = min(m.activeTab+1, len(m.Tabs)-1)
 			titles := m.btd.GetTitles()
 			m.table = m.build_table(titles, m.table.Cursor(), m.Tabs[m.activeTab])
 			m.updateInputs(msg)
-				m.focusIndex = 0
-				m.TextInputs[0].Focus()
+			m.focusIndex = 0
+			m.TextInputs[0].Focus()
 			return m, nil
 		case "tab":
 			if len(m.table.SelectedRow()) == 0 {
