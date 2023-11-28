@@ -128,6 +128,19 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		tb.SetCursor(gotocursor)
 	}
 
+	s := table.DefaultStyles()
+	s.Header = s.Header.
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		BorderBottom(true).
+		Bold(false)
+	
+		s.Selected = s.Selected.
+		Foreground(lipgloss.Color("229")).
+		Background(lipgloss.Color("57")).
+		Bold(false)
+	
+	tb.SetStyles(s)
 	current_table_row2 := m.table.SelectedRow()
 	if len(current_table_row2) > 0 {
 		current_table_index2, _ := strconv.Atoi(current_table_row2[0])
@@ -137,17 +150,6 @@ func (m *model) build_table(a []string, gotocursor int, filter_state string) tab
 		m.textarea.SetValue("")
 	}
 
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Background(lipgloss.Color("57")).
-		Bold(false)
-	tb.SetStyles(s)
 	return tb
 }
 
