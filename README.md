@@ -3,7 +3,7 @@
 
 ## A Gettings-Things-Done-Client 
 
-This is a command line program implementing the GTD-method as advocated by Davin Allen. It allows you to track any tasks over time, freeing you from the mental load of having to remember anything. 
+This is a command line program implementing the GTD-method as advocated by David Allen. It allows you to track any tasks over time, freeing you from the mental load of having to remember anything. 
 
 Design goals:
 
